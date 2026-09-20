@@ -35,16 +35,21 @@ NAMESPACE = {
     "atom": "http://www.w3.org/2005/Atom"
 }
 
-date_limite = datetime.now(timezone.utc) - timedelta(days=DAYS)
+date_limite = (
+    datetime.now(timezone.utc)
+    - timedelta(days=DAYS)
+)
 
 
 # ============================================================
 # RÉCUPÉRATION DES VIDÉOS
 # ============================================================
 
-all_videos = []
+videos_by_channel = {}
 
 for channel_name, channel_id in CHANNELS.items():
+
+    videos_by_channel[channel_name] = []
 
     rss_url = (
         "https://www.youtube.com/feeds/videos.xml"
@@ -52,6 +57,7 @@ for channel_name, channel_id in CHANNELS.items():
     )
 
     try:
+
         response = requests.get(
             rss_url,
             headers=HEADERS,
@@ -59,19 +65,34 @@ for channel_name, channel_id in CHANNELS.items():
         )
 
         if response.status_code != 200:
+
             print(
-                f"Erreur {response.status_code} : "
-                f"{channel_name}"
+                f"❌ {channel_name} : "
+                f"HTTP {response.status_code}"
             )
+
             continue
 
         root = ET.fromstring(response.text)
 
     except Exception as e:
-        print(f"Erreur avec {channel_name} : {e}")
+
+        print(
+            f"❌ Erreur avec "
+            f"{channel_name} : {e}"
+        )
+
         continue
 
-    for entry in root.findall("atom:entry", NAMESPACE):
+
+    # ========================================================
+    # PARCOURS DES VIDÉOS
+    # ========================================================
+
+    for entry in root.findall(
+        "atom:entry",
+        NAMESPACE
+    ):
 
         title_element = entry.find(
             "atom:title",
@@ -95,13 +116,23 @@ for channel_name, channel_id in CHANNELS.items():
         ):
             continue
 
+
         title = title_element.text
         published = published_element.text
         video_id = video_id_element.text
 
+
+        # ----------------------------------------------------
+        # DATE
+        # ----------------------------------------------------
+
         date_video = datetime.fromisoformat(
-            published.replace("Z", "+00:00")
+            published.replace(
+                "Z",
+                "+00:00"
+            )
         )
+
 
         # ----------------------------------------------------
         # FILTRE : 7 DERNIERS JOURS
@@ -110,6 +141,7 @@ for channel_name, channel_id in CHANNELS.items():
         if date_video < date_limite:
             continue
 
+
         # ----------------------------------------------------
         # FILTRE : 2 # OU PLUS
         # ----------------------------------------------------
@@ -117,76 +149,134 @@ for channel_name, channel_id in CHANNELS.items():
         if title.count("#") >= 2:
             continue
 
-        link = (
-            "https://www.youtube.com/watch?v="
-            + video_id
-        )
 
-        all_videos.append({
-            "channel": channel_name,
+        # ----------------------------------------------------
+        # AJOUT
+        # ----------------------------------------------------
+
+        videos_by_channel[channel_name].append({
+
             "title": title,
+
             "date": date_video,
-            "link": link,
+
+            "link":
+                "https://www.youtube.com/watch?v="
+                + video_id
+
         })
 
 
 # ============================================================
-# TRI : PLUS RÉCENT EN PREMIER
+# TRI DES VIDÉOS
 # ============================================================
 
-all_videos.sort(
-    key=lambda video: video["date"],
-    reverse=True
-)
+for channel_name in videos_by_channel:
 
-
-# ============================================================
-# CRÉATION DES CARTES HTML
-# ============================================================
-
-cards = ""
-
-for video in all_videos:
-
-    date_formatted = video["date"].strftime(
-        "%d/%m/%Y à %H:%M"
+    videos_by_channel[channel_name].sort(
+        key=lambda video: video["date"],
+        reverse=True
     )
 
-    cards += f"""
-    <article class="video-card">
 
-        <div class="channel">
-            📺 {escape(video["channel"])}
+# ============================================================
+# GÉNÉRATION DES BLOCS CHAÎNES
+# ============================================================
+
+channels_html = ""
+
+total_videos = 0
+
+
+for channel_name, videos in videos_by_channel.items():
+
+    # On peut masquer les chaînes sans vidéo
+    if not videos:
+        continue
+
+
+    total_videos += len(videos)
+
+
+    videos_html = ""
+
+
+    for video in videos:
+
+        date_formatted = (
+            video["date"].strftime(
+                "%d/%m/%Y à %H:%M"
+            )
+        )
+
+
+        videos_html += f"""
+        <div class="video">
+
+            <div class="video-title">
+                {escape(video["title"])}
+            </div>
+
+            <div class="video-date">
+                📅 {date_formatted}
+            </div>
+
+            <a
+                class="youtube-button"
+                href="{escape(video["link"])}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                ▶️ Voir sur YouTube
+            </a>
+
+        </div>
+        """
+
+
+    # ========================================================
+    # CHAÎNE
+    # ========================================================
+
+    channels_html += f"""
+    <details class="channel">
+
+        <summary>
+
+            <span class="channel-name">
+                📺 {escape(channel_name)}
+            </span>
+
+            <span class="video-count">
+                {len(videos)}
+                vidéo{"s" if len(videos) > 1 else ""}
+            </span>
+
+        </summary>
+
+
+        <div class="videos">
+
+            {videos_html}
+
         </div>
 
-        <h2>
-            {escape(video["title"])}
-        </h2>
-
-        <div class="date">
-            📅 {date_formatted}
-        </div>
-
-        <a
-            class="watch"
-            href="{escape(video["link"])}"
-            target="_blank"
-        >
-            ▶️ Voir la vidéo
-        </a>
-
-    </article>
+    </details>
     """
 
 
 # ============================================================
-# SI AUCUNE VIDÉO
+# AUCUNE VIDÉO
 # ============================================================
 
-if not all_videos:
-    cards = """
+if not channels_html:
+
+    channels_html = """
     <div class="empty">
-        Aucune nouvelle vidéo trouvée.
+
+        Aucune vidéo trouvée
+        durant les 7 derniers jours.
+
     </div>
     """
 
@@ -214,7 +304,10 @@ html = f"""
         content="#111827"
     >
 
-    <title>Mes vidéos YouTube</title>
+    <title>
+        Mes vidéos YouTube
+    </title>
+
 
     <style>
 
@@ -222,144 +315,268 @@ html = f"""
             box-sizing: border-box;
         }}
 
+
         body {{
+
             margin: 0;
+
             background: #f3f4f6;
+
             color: #111827;
+
             font-family:
                 -apple-system,
                 BlinkMacSystemFont,
                 "Segoe UI",
                 sans-serif;
+
         }}
+
 
         header {{
+
             background: #111827;
+
             color: white;
-            padding: 24px 16px;
+
+            padding: 25px 18px;
+
             text-align: center;
+
         }}
+
 
         header h1 {{
-            margin: 0 0 8px 0;
-            font-size: 26px;
+
+            margin: 0 0 7px 0;
+
+            font-size: 25px;
+
         }}
+
 
         header p {{
+
             margin: 0;
-            opacity: 0.75;
+
             font-size: 14px;
+
+            opacity: 0.7;
+
         }}
+
 
         main {{
+
             max-width: 800px;
+
             margin: auto;
-            padding: 16px;
+
+            padding: 15px;
+
         }}
 
-        .video-card {{
-            background: white;
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 14px;
-            box-shadow:
-                0 2px 8px rgba(0, 0, 0, 0.08);
+
+        .summary {{
+
+            text-align: center;
+
+            color: #6b7280;
+
+            font-size: 14px;
+
+            margin-bottom: 15px;
+
         }}
+
+
+        /* ===================================================
+           CHAÎNE
+           =================================================== */
+
 
         .channel {{
+
+            background: white;
+
+            border-radius: 13px;
+
+            margin-bottom: 10px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 2px 7px
+                rgba(0, 0, 0, 0.08);
+
+        }}
+
+
+        .channel summary {{
+
+            cursor: pointer;
+
+            list-style: none;
+
+            padding: 18px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 10px;
+
+            font-weight: 600;
+
+            user-select: none;
+
+        }}
+
+
+        .channel summary::-webkit-details-marker {{
+
+            display: none;
+
+        }}
+
+
+        .channel summary::after {{
+
+            content: "›";
+
+            font-size: 25px;
+
+            color: #9ca3af;
+
+            transition: transform 0.2s;
+
+        }}
+
+
+        .channel[open] summary::after {{
+
+            transform: rotate(90deg);
+
+        }}
+
+
+        .channel-name {{
+
+            font-size: 17px;
+
+        }}
+
+
+        .video-count {{
+
             color: #6b7280;
+
             font-size: 14px;
+
+            white-space: nowrap;
+
+        }}
+
+
+        /* ===================================================
+           VIDÉOS
+           =================================================== */
+
+
+        .videos {{
+
+            border-top: 1px solid #e5e7eb;
+
+        }}
+
+
+        .video {{
+
+            padding: 17px;
+
+            border-bottom: 1px solid #e5e7eb;
+
+        }}
+
+
+        .video:last-child {{
+
+            border-bottom: none;
+
+        }}
+
+
+        .video-title {{
+
+            font-size: 16px;
+
+            line-height: 1.45;
+
             font-weight: 600;
-            margin-bottom: 8px;
+
+            margin-bottom: 7px;
+
         }}
 
-        h2 {{
-            font-size: 19px;
-            line-height: 1.4;
-            margin: 0 0 10px 0;
-        }}
 
-        .date {{
+        .video-date {{
+
             color: #6b7280;
+
             font-size: 13px;
-            margin-bottom: 15px;
+
+            margin-bottom: 12px;
+
         }}
 
-        .watch {{
+
+        .youtube-button {{
+
             display: block;
+
             background: #dc2626;
+
             color: white;
+
             text-decoration: none;
+
             text-align: center;
-            padding: 12px;
-            border-radius: 9px;
+
+            padding: 11px;
+
+            border-radius: 8px;
+
+            font-size: 14px;
+
             font-weight: 600;
+
         }}
 
-        .watch:active {{
+
+        .youtube-button:active {{
+
             opacity: 0.8;
+
         }}
+
+
+        /* ===================================================
+           AUCUNE VIDÉO
+           =================================================== */
+
 
         .empty {{
+
             background: white;
-            border-radius: 14px;
+
+            border-radius: 13px;
+
             padding: 30px;
+
             text-align: center;
+
             color: #6b7280;
+
         }}
-
-        .count {{
-            text-align: center;
-            color: #6b7280;
-            font-size: 14px;
-            margin: 8px 0 18px;
-        }}
-
-    </style>
-
-</head>
-
-<body>
-
-<header>
-
-    <h1>📺 Mes vidéos YouTube</h1>
-
-    <p>
-        Vidéos publiées durant les 7 derniers jours
-    </p>
-
-</header>
-
-<main>
-
-    <div class="count">
-        {len(all_videos)} vidéo(s) trouvée(s)
-    </div>
-
-    {cards}
-
-</main>
-
-</body>
-
-</html>
-"""
-
-
-# ============================================================
-# ÉCRITURE DU FICHIER
-# ============================================================
-
-with open(
-    "index.html",
-    "w",
-    encoding="utf-8"
-) as file:
-
-    file.write(html)
-
-
-print(
-    f"Page créée avec {len(all_videos)} vidéo(s)."
-)
