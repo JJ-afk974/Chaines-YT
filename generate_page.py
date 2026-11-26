@@ -9,14 +9,22 @@ from html import escape
 # ============================================================
 
 CHANNELS = {
-    "SPATULE BROS": "UCr85SbHVJydkcsXnt6kX2dg",
-    "Monsieur Phi": "UCqA8H22FwgBVcF3GJpp0MQw",
+    "France Culture": "UCd5DKToXYTKAQ6khzewww2g",
+    "LIMIT": "UCAbFIrKZCYdKucQYnhxWnrA",
+    "Green Letter Club": "UC_GM-TPeAx9kKS1CaPwGPow",
+    "Chercheur.es": "UCLO7cIpYtzatjO4Sb9mLTQA",
+
+    "Les couilles sur la table": "UCmsEKbOV5Drze1NdtQcsSNg",
     "Dany Caligula": "UCxJka_qnTVquoIL-PQV5POg",
+
+    "2 Hommes en colère": "UCuNMutA469n7rDCEQYp7kcg",
     "Le Tropeur": "UCrpqKTyAxJWSpwmA_BfWTjw",
     "Durendal1": "UCcliHNE38fJ4n4gYYB0TCQw",
-    "Regelegorila": "UCouHAi3jWpC8lAqsoeM_zOA",
-    "France Culture": "UCd5DKToXYTKAQ6khzewww2g",
+
+    "Science Etonnante": "UCaNlbnghtwlsGF-KzAFThqA",
     "Science4All": "UC0NCbj8CxzeCGIF6sODJ-7A",
+    "Monsieur Phi": "UCqA8H22FwgBVcF3GJpp0MQw",
+    "Dwarkesh Patel": "UCXl4i9dYBrFOabk0xGmbkRA",
 }
 
 
