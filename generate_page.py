@@ -225,7 +225,8 @@ for channel_name, videos in videos_by_channel.items():
         f'<span class="channel-name">📺 '
         f'{escape(channel_name)}</span>'
         f'<span class="video-count">'
-        f'{nombre} {mot_video}</span>'
+        f'{nombre} {mot_video}, dont 0 vues'
+        '</span>'
         '</summary>'
         '<div class="videos">'
         f'{videos_html}'
@@ -482,6 +483,29 @@ document.addEventListener("DOMContentLoaded", function() {{
         localStorage.getItem(STORAGE_KEY) || "[]"
     );
 
+    function updateChannelCount(channelElement) {{
+        const checkboxes = channelElement.querySelectorAll(
+            ".watched-checkbox"
+        );
+            
+        const total = checkboxes.length;
+            
+        const watched = channelElement.querySelectorAll(
+            ".watched-checkbox:checked"
+        ).length;
+            
+        const videoWord = total === 1 ? "vidéo" : "vidéos";
+        const watchedWord = watched === 1 ? "vue" : "vues";
+            
+        const counter = channelElement.querySelector(".video-count");
+            
+        if (counter) {{
+            counter.textContent =
+            total + " " + videoWord +
+            ", dont " + watched + " " + watchedWord;
+        }}
+    }}
+
     const checkboxes = document.querySelectorAll(
         ".watched-checkbox"
     );
@@ -522,10 +546,17 @@ document.addEventListener("DOMContentLoaded", function() {{
                 STORAGE_KEY,
                 JSON.stringify(watchedVideos)
             );
+            updateChannelCount(
+                videoElement.closest(".channel")
+            );
 
         }});
 
     }});
+
+    document.querySelectorAll(".channel").forEach(
+        updateChannelCount
+    );
 
 }});
 
