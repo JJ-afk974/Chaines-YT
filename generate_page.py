@@ -420,7 +420,7 @@ html = f"""<!DOCTYPE html>
             color: #6b7280;
         }}
 
-        .watched-label {
+        .watched-label {{
             display: flex;
             align-items: center;
             gap: 8px;
@@ -428,85 +428,27 @@ html = f"""<!DOCTYPE html>
             color: #6b7280;
             font-size: 13px;
             cursor: pointer;
-        }
+        }}
         
-        .watched-checkbox {
+        .watched-checkbox {{
             width: 18px;
             height: 18px;
             cursor: pointer;
             accent-color: #16a34a;
-        }
+        }}
         
-        .video.watched .video-title {
+        .video.watched .video-title {{
             text-decoration: line-through;
             opacity: 0.45;
-        }
+        }}
         
-        .video.watched {
+        .video.watched {{
             background: #f9fafb;
-        }
+        }}
 
     </style>
 
 </head>
-
-<script>
-
-document.addEventListener("DOMContentLoaded", function() {
-
-    const STORAGE_KEY = "youtube_videos_watched";
-
-    let watchedVideos = JSON.parse(
-        localStorage.getItem(STORAGE_KEY) || "[]"
-    );
-
-    const checkboxes = document.querySelectorAll(
-        ".watched-checkbox"
-    );
-
-    checkboxes.forEach(function(checkbox) {
-
-        const videoId = checkbox.dataset.videoId;
-        const videoElement = checkbox.closest(".video");
-
-        // Restaurer l'état enregistré
-        checkbox.checked = watchedVideos.includes(videoId);
-
-        if (checkbox.checked) {
-            videoElement.classList.add("watched");
-        }
-
-        // Sauvegarder chaque modification
-        checkbox.addEventListener("change", function() {
-
-            if (checkbox.checked) {
-
-                if (!watchedVideos.includes(videoId)) {
-                    watchedVideos.push(videoId);
-                }
-
-                videoElement.classList.add("watched");
-
-            } else {
-
-                watchedVideos = watchedVideos.filter(
-                    id => id !== videoId
-                );
-
-                videoElement.classList.remove("watched");
-            }
-
-            localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(watchedVideos)
-            );
-
-        });
-
-    });
-
-});
-</script>
                 
 <body>
 
@@ -529,6 +471,65 @@ document.addEventListener("DOMContentLoaded", function() {
     {channels_html}
 
 </main>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function() {{
+
+    const STORAGE_KEY = "youtube_videos_watched";
+
+    let watchedVideos = JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "[]"
+    );
+
+    const checkboxes = document.querySelectorAll(
+        ".watched-checkbox"
+    );
+
+    checkboxes.forEach(function(checkbox) {{
+
+        const videoId = checkbox.dataset.videoId;
+        const videoElement = checkbox.closest(".video");
+
+        // Restaurer l'état enregistré
+        checkbox.checked = watchedVideos.includes(videoId);
+
+        if (checkbox.checked) {{
+            videoElement.classList.add("watched");
+        }}
+
+        // Sauvegarder chaque modification
+        checkbox.addEventListener("change", function() {{
+
+            if (checkbox.checked) {{
+
+                if (!watchedVideos.includes(videoId)) {{
+                    watchedVideos.push(videoId);
+                }}
+
+                videoElement.classList.add("watched");
+
+            }} else {{
+
+                watchedVideos = watchedVideos.filter(
+                    id => id !== videoId
+                );
+
+                videoElement.classList.remove("watched");
+            }}
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(watchedVideos)
+            );
+
+        }});
+
+    }});
+
+}});
+
+</script>
 
 </body>
 
