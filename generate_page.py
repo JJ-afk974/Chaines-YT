@@ -141,6 +141,7 @@ for channel_name, channel_id in CHANNELS.items():
         # ----------------------------------------------------
 
         videos_by_channel[channel_name].append({
+            "id": video_id,
             "title": title,
             "date": date_video,
             "link": (
@@ -183,6 +184,12 @@ for channel_name, videos in videos_by_channel.items():
 
         videos_html += (
             '<div class="video">'
+            '<label class="watched-label">'
+            f'<input type="checkbox" '
+            f'class="watched-checkbox" '
+            f'data-video-id="{escape(video["id"])}">'
+            '<span>Déjà regardée</span>'
+            '</label>'
             f'<div class="video-title">'
             f'{escape(video["title"])}'
             '</div>'
@@ -413,10 +420,94 @@ html = f"""<!DOCTYPE html>
             color: #6b7280;
         }}
 
+        .watched-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            color: #6b7280;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .watched-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #16a34a;
+        }
+        
+        .video.watched .video-title {
+            text-decoration: line-through;
+            opacity: 0.45;
+        }
+        
+        .video.watched {
+            background: #f9fafb;
+        }
+
     </style>
 
 </head>
 
+<script>
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    const STORAGE_KEY = "youtube_videos_watched";
+
+    let watchedVideos = JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "[]"
+    );
+
+    const checkboxes = document.querySelectorAll(
+        ".watched-checkbox"
+    );
+
+    checkboxes.forEach(function(checkbox) {
+
+        const videoId = checkbox.dataset.videoId;
+        const videoElement = checkbox.closest(".video");
+
+        // Restaurer l'état enregistré
+        checkbox.checked = watchedVideos.includes(videoId);
+
+        if (checkbox.checked) {
+            videoElement.classList.add("watched");
+        }
+
+        // Sauvegarder chaque modification
+        checkbox.addEventListener("change", function() {
+
+            if (checkbox.checked) {
+
+                if (!watchedVideos.includes(videoId)) {
+                    watchedVideos.push(videoId);
+                }
+
+                videoElement.classList.add("watched");
+
+            } else {
+
+                watchedVideos = watchedVideos.filter(
+                    id => id !== videoId
+                );
+
+                videoElement.classList.remove("watched");
+            }
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(watchedVideos)
+            );
+
+        });
+
+    });
+
+});
+</script>
+                
 <body>
 
 <header>
