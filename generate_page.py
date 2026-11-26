@@ -171,10 +171,6 @@ total_videos = 0
 
 for channel_name, videos in videos_by_channel.items():
 
-    # Ne pas afficher les chaînes sans vidéo
-    if not videos:
-        continue
-
     total_videos += len(videos)
 
     videos_html = ""
@@ -206,6 +202,16 @@ for channel_name, videos in videos_by_channel.items():
 
     mot_video = "vidéo" if nombre == 1 else "vidéos"
 
+    # Message si aucune vidéo
+    if nombre == 0:
+        videos_html = (
+            '<div class="video">'
+            '<div class="video-date">'
+            'Aucune vidéo publiée durant les 7 derniers jours.'
+            '</div>'
+            '</div>'
+        )
+
     channels_html += (
         '<details class="channel">'
         '<summary>'
@@ -219,7 +225,6 @@ for channel_name, videos in videos_by_channel.items():
         '</div>'
         '</details>'
     )
-
 
 # ============================================================
 # AUCUNE VIDÉO
